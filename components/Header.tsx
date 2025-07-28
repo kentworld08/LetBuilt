@@ -315,7 +315,7 @@ export function Header() {
                   </li>
                   <li>
                     <Link
-                      href="/faq"
+                      href="/faqs"
                       className="block px-0 lg:px-4 py-1 lg:py-2 hover:bg-transparent lg:hover:bg-gray-600 text-xs lg:text-sm"
                     >
                       FAQS
