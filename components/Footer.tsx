@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function Footer() {
   const date = new Date();
@@ -14,44 +15,44 @@ export function Footer() {
             </h3>
             <ul className="space-y-1 md:space-y-2">
               <li>
-                <a
+                <Link
                   href="#"
                   className="text-gray-300 hover:text-orange-500 transition-colors"
                 >
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="#"
                   className="text-gray-300 hover:text-orange-500 transition-colors"
                 >
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="#"
                   className="text-gray-300 hover:text-orange-500 transition-colors"
                 >
                   FAQS
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="#"
                   className="text-gray-300 hover:text-orange-500 transition-colors"
                 >
                   TERMS AND CONDITIONS
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="#"
                   className="text-gray-300 hover:text-orange-500 transition-colors"
                 >
                   CONTACT US
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

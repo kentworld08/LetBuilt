@@ -248,12 +248,12 @@ export function Header() {
           <div className={`${isMenuOpen ? "block" : "hidden"} lg:block`}>
             <ul className="flex flex-col lg:flex-row lg:items-center lg:space-x-8 py-4">
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/"
                   className="block py-2 lg:py-0 text-orange-500 font-medium text-sm lg:text-base"
                 >
                   HOME
-                </a>
+                </Link>
               </li>
               <li>
                 <Link
@@ -272,12 +272,12 @@ export function Header() {
                 </a>
                 <ul className="lg:absolute top-full left-0 bg-gray-700 lg:rounded-md lg:shadow-lg opacity-100 lg:opacity-0 visible lg:invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 min-w-48 z-50 pl-4 lg:pl-0">
                   <li>
-                    <a
-                      href="#"
+                    <Link
+                      href="/forex-trading"
                       className="block px-0 lg:px-4 py-1 lg:py-2 hover:bg-transparent lg:hover:bg-gray-600 text-xs lg:text-sm"
                     >
                       FOREX TRADING
-                    </a>
+                    </Link>
                   </li>
                   <li>
                     <a
