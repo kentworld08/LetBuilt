@@ -280,12 +280,12 @@ export function Header() {
                     </Link>
                   </li>
                   <li>
-                    <a
-                      href="#"
+                    <Link
+                      href="/cfd-trading"
                       className="block px-0 lg:px-4 py-1 lg:py-2 hover:bg-transparent lg:hover:bg-gray-600 text-xs lg:text-sm"
                     >
                       CFD TRADING
-                    </a>
+                    </Link>
                   </li>
                   <li>
                     <a
