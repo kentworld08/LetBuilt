@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User, UserPlus } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 // Mock API functions (since we can't install external packages in this environment)
 const fetchBitcoinPrice = async () => {
@@ -255,12 +256,12 @@ export function Header() {
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/about"
                   className="block py-2 lg:py-0 hover:text-orange-500 transition-colors text-sm lg:text-base"
                 >
                   ABOUT US
-                </a>
+                </Link>
               </li>
               <li className="relative group">
                 <a

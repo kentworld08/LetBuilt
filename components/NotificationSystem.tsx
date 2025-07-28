@@ -10,7 +10,10 @@ const notifications = [
   { name: "Vina", country: "MEXICO", amount: 44400 },
   { name: "Tony", country: "INDIA", amount: 3033 },
   { name: "Ahmed", country: "CHINA", amount: 338653 },
-  { name: "Jackson", country: "CAMBODIA", amount: 1200 },
+  { name: "Jane", country: "EGYPT", amount: 1200 },
+  { name: "Alice", country: "SPAIN", amount: 12000 },
+  { name: "Afred", country: "CANADA", amount: 1200 },
+  { name: "Praise", country: "ROMANIA", amount: 1200 },
 ];
 
 export function NotificationSystem() {

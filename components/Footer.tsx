@@ -1,6 +1,8 @@
 import Image from "next/image";
 
 export function Footer() {
+  const date = new Date();
+  const year = date.getFullYear();
   return (
     <footer className="bg-gray-900 text-white py-16">
       <div className="container mx-auto px-4">
@@ -163,25 +165,25 @@ export function Footer() {
               </p>
               <div className="flex space-x-2">
                 <Image
-                  src="/placeholder.svg?height=30&width=40&text=BTC"
+                  src="/f-bitcoin.png"
                   alt="Bitcoin"
-                  width={40}
+                  width={30}
                   height={30}
-                  className="bg-orange-500 rounded"
+                  className="bg-orange-500 rounded-full"
                 />
                 <Image
-                  src="/placeholder.svg?height=30&width=40&text=ETH"
+                  src="/f-etherium.png"
                   alt="Ethereum"
-                  width={40}
+                  width={30}
                   height={30}
-                  className="bg-blue-500 rounded"
+                  className="bg-blue-500 rounded-full"
                 />
                 <Image
-                  src="/placeholder.svg?height=30&width=40&text=LTC"
+                  src="/skrill.png"
                   alt="Litecoin"
-                  width={40}
+                  width={30}
                   height={30}
-                  className="bg-gray-500 rounded"
+                  className="bg-gray-500 rounded-full"
                 />
               </div>
             </div>
@@ -190,7 +192,7 @@ export function Footer() {
 
         <hr className="border-gray-700 my-8" />
         <p className="text-center text-gray-400">
-          Copyright © 2024 LetBuilt, All Rights Reserved
+          Copyright © {year} LetBuilt, All Rights Reserved
         </p>
       </div>
     </footer>
