@@ -298,46 +298,46 @@ export function Header() {
                 </ul>
               </li>
               <li className="relative group">
-                <a
+                <Link
                   href="#"
                   className="block py-2 lg:py-0 hover:text-orange-500 transition-colors text-sm lg:text-base"
                 >
                   LEGAL
-                </a>
+                </Link>
                 <ul className="lg:absolute top-full left-0 bg-gray-700 lg:rounded-md lg:shadow-lg opacity-100 lg:opacity-0 visible lg:invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 min-w-48 z-50 pl-4 lg:pl-0">
                   <li>
-                    <a
-                      href="#"
+                    <Link
+                      href="/terms"
                       className="block px-0 lg:px-4 py-1 lg:py-2 hover:bg-transparent lg:hover:bg-gray-600 text-xs lg:text-sm"
                     >
                       TERMS & CONDITIONS
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
-                      href="#"
+                    <Link
+                      href="/faq"
                       className="block px-0 lg:px-4 py-1 lg:py-2 hover:bg-transparent lg:hover:bg-gray-600 text-xs lg:text-sm"
                     >
                       FAQS
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/contact"
                   className="block py-2 lg:py-0 hover:text-orange-500 transition-colors text-sm lg:text-base"
                 >
                   CONTACT US
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/affiliate"
                   className="block py-2 lg:py-0 hover:text-orange-500 transition-colors text-sm lg:text-base"
                 >
                   AFFILIATE
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
