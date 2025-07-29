@@ -1,49 +1,17 @@
+import HeroBanner from "@/lib/HeroBanner";
 import Image from "next/image";
-import Link from "next/link";
+import { CFDTradingFeatures } from "@/constants/Data";
+import { CFDTrading } from "@/constants/Data";
 
 export function CFDTradingContent() {
   return (
     <div className="bg-gray-900 text-white">
-      {/* Hero Banner */}
-      <div className="relative bg-gradient-to-r from-gray-800 to-gray-900 py-16 md:py-24 lg:py-32">
-        <div className="absolute inset-0 bg-black/30"></div>
-        <div className="relative container mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-6 md:mb-8">
-            <span className="text-orange-500">CFD</span> TRADING LetBuilt
-          </h1>
-          <div className="flex items-center justify-center space-x-2 text-gray-300 text-sm md:text-base">
-            <Link href="/" className="hover:text-orange-500 transition-colors">
-              HOME
-            </Link>
-            <span>/</span>
-            <span>CFD TRADING</span>
-          </div>
-        </div>
+      <HeroBanner title1="CFD" title2="TRADING LetBuilt" sub="CFD TRADING" />
 
-        {/* Animated particles background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="particles-container">
-            {[...Array(15)].map((_, i) => (
-              <div
-                key={i}
-                className="particle"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 5}s`,
-                  animationDuration: `${8 + Math.random() * 12}s`,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
       <div className="py-16 md:py-20 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-start">
-              {/* Image Section */}
               <div className="order-2 lg:order-1">
                 <div className="relative max-w-md mx-auto lg:max-w-none">
                   <Image
@@ -66,7 +34,6 @@ export function CFDTradingContent() {
                 </div>
               </div>
 
-              {/* Content Section - Exact text from original */}
               <div className="order-1 lg:order-2 space-y-6 md:space-y-8">
                 <div>
                   <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-6 text-orange-500">
@@ -74,47 +41,11 @@ export function CFDTradingContent() {
                   </h2>
                 </div>
 
-                {/* CFD Trading Content - Exact text */}
                 <div className="space-y-4">
                   <div className="text-gray-300 leading-relaxed text-sm md:text-base lg:text-md space-y-4">
-                    <p>
-                      CFD trading is the activity of trading contracts for
-                      difference with a broker. CFDs (Contract for difference)
-                      are derivative products in which you can trade on the
-                      difference between a certain asset`s set starting value
-                      and its closing value. By using a contract for difference,
-                      which is basically just a contract between a buyer and
-                      seller that specifies a certain purchase price and allows
-                      for profits or losses based on the change in the price of
-                      the underlying asset during a specified time frame, a
-                      trader can participate in a financial market with a
-                      smaller initial investment.
-                    </p>
-
-                    <p>
-                      Since their introduction in the early 1990s, CFDs have
-                      become increasingly popular as investors appreciate the
-                      lower capital requirements. They allow investors to
-                      participate in markets they may not have had access to
-                      previously because of large margin requirements or
-                      regulatory issues. CFD trading gives traders the ability
-                      to go long or short on an asset, , and in the U.K.,traders
-                      can avoid the stamp duty since CFDs are derivative
-                      products.
-                    </p>
-
-                    <p>
-                      When trading CFDs you predict your chosen asset`s movement
-                      in the market. As you do in traditional trading, you Buy
-                      when your prediction is a rise in value and Sell when your
-                      prediction is a fall in value. This does not mean you are
-                      buying or selling the asset because when investing in CFDs
-                      you are investing in your right to earn from the asset`s
-                      movement not the asset itself. However, it is important to
-                      remember that you can lose your investments should the
-                      asset price move in the opposite direction from your
-                      prediction.
-                    </p>
+                    {CFDTrading.map((cfd, index) => (
+                      <p key={index}>{cfd}</p>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -123,7 +54,6 @@ export function CFDTradingContent() {
         </div>
       </div>
 
-      {/* Trading Example Section */}
       <div className="bg-gray-800 py-16 md:py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
@@ -185,8 +115,6 @@ export function CFDTradingContent() {
           </div>
         </div>
       </div>
-
-      {/* CFD Features Section */}
       <div className="bg-gray-900 py-16 md:py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
@@ -201,44 +129,7 @@ export function CFDTradingContent() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {[
-              {
-                icon: "📈",
-                title: "Go Long or Short",
-                description:
-                  "Profit from both rising and falling markets with flexible position options",
-              },
-              {
-                icon: "💰",
-                title: "Lower Capital Requirements",
-                description:
-                  "Access markets with smaller initial investments compared to traditional trading",
-              },
-              {
-                icon: "🌍",
-                title: "Global Market Access",
-                description:
-                  "Trade stocks, indices, commodities, and currencies from around the world",
-              },
-              {
-                icon: "⚡",
-                title: "No Stamp Duty",
-                description:
-                  "CFDs are derivative products, avoiding stamp duty in many jurisdictions",
-              },
-              {
-                icon: "📊",
-                title: "Real-time Charts",
-                description:
-                  "Advanced charting tools with live market data and technical analysis",
-              },
-              {
-                icon: "🛡️",
-                title: "Risk Management",
-                description:
-                  "Built-in tools to help manage your trading risks and protect your capital",
-              },
-            ].map((feature, index) => (
+            {CFDTradingFeatures.map((feature, index) => (
               <div
                 key={index}
                 className="bg-gray-800 rounded-lg p-6 md:p-8 text-center hover:bg-gray-700 transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl"
@@ -256,7 +147,6 @@ export function CFDTradingContent() {
         </div>
       </div>
 
-      {/* Risk Warning */}
       <div className="bg-red-900/20 border-t border-red-600 py-8 md:py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">

@@ -246,7 +246,7 @@ export function Header() {
       <nav className="bg-gray-800 text-white">
         <div className="container mx-auto px-4">
           <div className={`${isMenuOpen ? "block" : "hidden"} lg:block`}>
-            <ul className="flex flex-col lg:flex-row lg:items-center lg:space-x-8 py-4">
+            <ul className="flex justify-center flex-col lg:flex-row lg:items-center lg:space-x-8 py-4">
               <li>
                 <Link
                   href="/"

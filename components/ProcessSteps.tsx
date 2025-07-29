@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-const steps = [
+const steps: TradingFeaturesProps[] = [
   {
     icon: "/download-bitcoin.png",
     title: "Download Bitcoin Wallet",
