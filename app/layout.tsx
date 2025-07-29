@@ -22,6 +22,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          id="chatway"
+          async
+          src="https://cdn.chatway.app/widget.js?id=qMqXR0DPaAMW"
+        ></script>
+      </head>
       <body className={inter.className}>
         <QueryProvider>
           <Header />

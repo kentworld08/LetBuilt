@@ -6,9 +6,6 @@ import { AboutSection } from "@/components/AboutSection";
 import { Features } from "@/components/Features";
 import { BitcoinCalculator } from "@/components/BitcoinCalculator";
 import { Testimonials } from "@/components/Testimonials";
-import { CallToAction } from "@/components/CallToAction";
-
-import { NotificationSystem } from "@/components/NotificationSystem";
 import { LiveStats } from "@/components/LiveStats";
 import { CryptoNews } from "@/components/CryptoNews";
 
@@ -29,9 +26,6 @@ export default function HomePage() {
       </div>
       <BitcoinCalculator />
       <Testimonials />
-      <CallToAction />
-
-      <NotificationSystem />
     </div>
   );
 }
