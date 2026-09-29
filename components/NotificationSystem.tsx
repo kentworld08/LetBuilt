@@ -1,20 +1,7 @@
 "use client";
 
+import { notifications } from "@/constants/Data";
 import { useState, useEffect } from "react";
-
-const notifications = [
-  { name: "Dirk", country: "USA", amount: 10000 },
-  { name: "Johnny", country: "UAE", amount: 20500 },
-  { name: "Watkin", country: "ITALY", amount: 50055 },
-  { name: "Alejandro", country: "FLORIDA", amount: 6066 },
-  { name: "Vina", country: "MEXICO", amount: 44400 },
-  { name: "Tony", country: "INDIA", amount: 3033 },
-  { name: "Ahmed", country: "CHINA", amount: 338653 },
-  { name: "Jane", country: "EGYPT", amount: 1200 },
-  { name: "Alice", country: "SPAIN", amount: 12000 },
-  { name: "Afred", country: "CANADA", amount: 1200 },
-  { name: "Praise", country: "ROMANIA", amount: 1200 },
-];
 
 export function NotificationSystem() {
   const [currentNotification, setCurrentNotification] = useState<
