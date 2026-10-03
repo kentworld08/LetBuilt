@@ -3,10 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/QueryProvider";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { CallToAction } from "@/components/CallToAction";
-import { NotificationSystem } from "@/components/NotificationSystem";
+import ConditionalLayout from "@/components/ConditionalLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,11 +28,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <QueryProvider>
-          <Header />
-          {children}
-          <CallToAction />
-          <NotificationSystem />
-          <Footer />
+          <ConditionalLayout>{children}</ConditionalLayout>
         </QueryProvider>
       </body>
     </html>

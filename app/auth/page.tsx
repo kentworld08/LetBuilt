@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
@@ -16,11 +17,8 @@ export default function AuthPage() {
   const [codeSent, setCodeSent] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
 
-  // Countdown for resend button
   useEffect(() => {
-    if (resendCountdown <= 0) {
-      return;
-    }
+    if (resendCountdown <= 0) return;
 
     const timer = setInterval(() => {
       setResendCountdown((current) => current - 1);
@@ -75,9 +73,7 @@ export default function AuthPage() {
   }
 
   async function resendCode() {
-    if (resendCountdown > 0 || resending) {
-      return;
-    }
+    if (resendCountdown > 0 || resending) return;
 
     setError("");
     setMessage("");
@@ -135,7 +131,6 @@ export default function AuthPage() {
       return;
     }
 
-    // Check whether this user already has a profile
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id")
@@ -149,13 +144,11 @@ export default function AuthPage() {
       return;
     }
 
-    // Existing user → dashboard
     if (profile) {
       router.push("/dashboard");
       return;
     }
 
-    // First-time user → profile setup
     router.push("/profile/setup");
   }
 
@@ -168,109 +161,166 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-md space-y-6">
-        {!codeSent ? (
-          <>
-            <div>
-              <h1 className="text-3xl font-bold">Welcome</h1>
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="absolute left-6 top-6">
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          aria-label="Back to website"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-slate-400 transition hover:border-slate-700 hover:bg-slate-800 hover:text-white cursor-pointer"
+        >
+          <ArrowLeft size={18} />
+        </button>
+      </div>
+      <div className="flex min-h-screen items-center justify-center px-6 py-10">
+        <div className="w-full max-w-md">
+          {/* Auth Card */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/20 sm:p-8">
+            {!codeSent ? (
+              <>
+                <div className="mb-7">
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Welcome back
+                  </h2>
 
-              <p className="mt-2 text-gray-600">
-                Enter your email to continue.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  setError("");
-                }}
-                placeholder="you@example.com"
-                autoComplete="email"
-                className="w-full rounded-md border px-4 py-3 outline-none focus:ring-2 focus:ring-orange-500"
-              />
-
-              <button
-                type="button"
-                onClick={sendCode}
-                disabled={loading || !email.trim()}
-                className="w-full rounded-md bg-orange-500 px-4 py-3 font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? "Sending..." : "Continue"}
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <h1 className="text-3xl font-bold">Check your email</h1>
-
-              <p className="mt-2 text-gray-600">
-                We sent a verification code to{" "}
-                <span className="font-medium text-gray-900">{email}</span>
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <input
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                value={otp}
-                onChange={(event) => {
-                  const value = event.target.value.replace(/\D/g, "");
-                  setOtp(value);
-                  setError("");
-                }}
-                placeholder="Enter 6-digit code"
-                className="w-full rounded-md border px-4 py-3 text-center text-xl tracking-[0.4em] outline-none focus:ring-2 focus:ring-orange-500"
-              />
-
-              <button
-                type="button"
-                onClick={verifyCode}
-                disabled={loading || otp.length !== 6}
-                className="w-full rounded-md bg-orange-500 px-4 py-3 font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? "Verifying..." : "Verify code"}
-              </button>
-
-              {/* Resend code */}
-              <div className="text-center">
-                {resendCountdown > 0 ? (
-                  <p className="text-sm text-gray-500">
-                    Resend code in {resendCountdown}s
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    Enter your email address and we&apos;ll send you a secure
+                    verification code.
                   </p>
-                ) : (
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="mb-2 block text-sm font-medium text-slate-200"
+                    >
+                      Email address
+                    </label>
+
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => {
+                        setEmail(event.target.value);
+                        setError("");
+                      }}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3.5 text-white placeholder:text-slate-600 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                    />
+                  </div>
+
                   <button
                     type="button"
-                    onClick={resendCode}
-                    disabled={resending}
-                    className="text-sm font-medium text-orange-500 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={sendCode}
+                    disabled={loading || !email.trim()}
+                    className="w-full rounded-xl bg-orange-500 px-4 py-3.5 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {resending ? "Sending..." : "Resend code"}
+                    {loading ? "Sending code..." : "Continue"}
                   </button>
-                )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-7">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400">
+                    ✉
+                  </div>
+
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Check your email
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    We sent a 6-digit verification code to
+                  </p>
+
+                  <p className="mt-1 break-all text-sm font-medium text-white">
+                    {email}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="otp"
+                      className="mb-2 block text-sm font-medium text-slate-200"
+                    >
+                      Verification code
+                    </label>
+
+                    <input
+                      id="otp"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(event) => {
+                        const value = event.target.value.replace(/\D/g, "");
+                        setOtp(value);
+                        setError("");
+                      }}
+                      placeholder="000000"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-center text-2xl font-semibold tracking-[0.45em] text-white placeholder:text-slate-700 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={verifyCode}
+                    disabled={loading || otp.length !== 6}
+                    className="w-full rounded-xl bg-orange-500 px-4 py-3.5 font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loading ? "Verifying..." : "Verify code"}
+                  </button>
+
+                  <div className="pt-1 text-center">
+                    {resendCountdown > 0 ? (
+                      <p className="text-sm text-slate-500">
+                        Resend code in{" "}
+                        <span className="font-medium text-slate-300">
+                          {resendCountdown}s
+                        </span>
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={resendCode}
+                        disabled={resending}
+                        className="text-sm font-medium text-orange-400 transition hover:text-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {resending ? "Sending..." : "Resend code"}
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={changeEmail}
+                    className="w-full pt-1 text-sm text-slate-500 transition hover:text-white"
+                  >
+                    Use a different email
+                  </button>
+                </div>
+              </>
+            )}
+
+            {message && (
+              <div className="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+                <p className="text-sm leading-5 text-emerald-400">{message}</p>
               </div>
+            )}
 
-              <button
-                type="button"
-                onClick={changeEmail}
-                className="w-full text-sm text-gray-600 hover:text-gray-900"
-              >
-                Use a different email
-              </button>
-            </div>
-          </>
-        )}
-
-        {message && <p className="text-sm text-green-600">{message}</p>}
-
-        {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+                <p className="text-sm leading-5 text-red-400">{error}</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );
