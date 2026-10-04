@@ -63,7 +63,7 @@ export function Features() {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center justify-center mt-8 lg:mt-0 bg-[url('/homebg1.jpg')] bg-cover bg-center w-[330px] opacity-70">
+          <div className="hidden md:flex w-full items-center justify-center mt-8 lg:mt-0 bg-[url('/homebg1.jpg')] bg-cover bg-center opacity-70">
             <div className="relative">
               <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 bg-orange-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-600 transition-colors">
                 <div className="w-0 h-0 border-l-[8px] md:border-l-[10px] lg:border-l-[12px] border-l-transparent border-r-[8px] md:border-r-[10px] lg:border-r-[12px] border-r-transparent border-b-[14px] md:border-b-[17px] lg:border-b-[20px] border-b-white ml-1" />

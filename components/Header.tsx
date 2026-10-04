@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -41,6 +42,8 @@ const fetchMarketStats = async () => {
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const router = useRouter();
 
   // Fetch Bitcoin price
   const { data: bitcoinData, isLoading: bitcoinLoading } = useQuery({
@@ -171,13 +174,19 @@ export function Header() {
             <div className="flex space-x-3">
               <Button
                 variant="outline"
+                onClick={() => router.push("/auth")}
                 size="sm"
-                className="text-xs px-3 bg-transparent"
+                className="text-xs px-3 bg-transparent cursor-pointer"
               >
                 <User size={14} className="mr-1" />
                 SIGN IN
               </Button>
-              <Button variant="v2" size="sm" className="text-xs px-3">
+              <Button
+                variant="v2"
+                onClick={() => router.push("/auth")}
+                size="sm"
+                className="text-xs px-3 cursor-pointer"
+              >
                 <UserPlus size={14} className="mr-1" />
                 REGISTER
               </Button>
@@ -210,7 +219,7 @@ export function Header() {
                   {bitcoinLoading
                     ? "Loading..."
                     : `${(bitcoinData?.bitcoin?.usd_24h_change || 0).toFixed(
-                        2
+                        2,
                       )}%`}
                 </div>
                 <div className="text-gray-400">24h Change</div>
@@ -227,13 +236,19 @@ export function Header() {
             <div className="flex flex-col space-y-2">
               <Button
                 variant="outline"
+                onClick={() => router.push("/auth")}
                 size="sm"
-                className="text-sm bg-transparent w-full"
+                className="text-sm bg-transparent w-full cursor-pointer"
               >
                 <User size={16} className="mr-2" />
                 SIGN IN
               </Button>
-              <Button variant="v2" size="sm" className="text-sm w-full">
+              <Button
+                variant="v2"
+                onClick={() => router.push("/auth")}
+                size="sm"
+                className="text-sm w-full cursor-pointer"
+              >
                 <UserPlus size={16} className="mr-2" />
                 REGISTER
               </Button>

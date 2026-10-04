@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 type Profile = {
   full_name: string | null;
   username: string | null;
+  role: "user" | "admin";
 };
 
 export function useProfile() {
@@ -23,7 +24,7 @@ export function useProfile() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, username")
+        .select("full_name, username, role")
         .eq("user_id", user.id)
         .single();
 

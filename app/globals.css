@@ -246,7 +246,9 @@ body {
 
 /* Pulsing effect for major nodes */
 .particle:nth-child(7n) {
-  animation: blockchainFloat linear infinite, pulse 2s ease-in-out infinite;
+  animation:
+    blockchainFloat linear infinite,
+    pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
@@ -255,7 +257,8 @@ body {
     box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
   }
   50% {
-    box-shadow: 0 0 20px rgba(249, 115, 22, 0.8),
+    box-shadow:
+      0 0 20px rgba(249, 115, 22, 0.8),
       0 0 30px rgba(249, 115, 22, 0.3);
   }
 }
@@ -286,3 +289,4 @@ html {
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
+
