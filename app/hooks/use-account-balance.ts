@@ -28,5 +28,14 @@ export function useAccountBalance() {
 
       return Number(data.balance);
     },
+
+    // Automatically check for balance changes every 5 seconds.
+    refetchInterval: 5000,
+
+    // Also refresh when the user comes back to the browser tab.
+    refetchOnWindowFocus: true,
+
+    // Refresh when the browser reconnects to the internet.
+    refetchOnReconnect: true,
   });
 }

@@ -8,9 +8,6 @@ export async function GET() {
 
     const supabase = createAdminClient();
 
-    /*
-     * Get all withdrawal requests.
-     */
     const { data: withdrawals, error: withdrawalsError } = await supabase
       .from("withdrawals")
       .select(
@@ -46,20 +43,10 @@ export async function GET() {
       return NextResponse.json([]);
     }
 
-    /*
-     * Get the user IDs from the withdrawal records.
-     */
     const userIds = [
       ...new Set(withdrawals.map((withdrawal) => withdrawal.user_id)),
     ];
 
-    /*
-     * Get customer names from profiles.
-     *
-     * We don't expose user_id to the dashboard.
-     * It is only used internally to match the withdrawal
-     * to the customer's profile.
-     */
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, full_name, username")
@@ -74,11 +61,20 @@ export async function GET() {
       );
     }
 
-    /*
-     * Create a quick lookup map:
-     *
-     * user_id -> customer name
-     */
+    const { data: assetBalances, error: assetBalancesError } = await supabase
+      .from("asset_balances")
+      .select("user_id, asset, balance, reserved_balance")
+      .in("user_id", userIds);
+
+    if (assetBalancesError) {
+      console.error("Admin asset balances error:", assetBalancesError);
+
+      return NextResponse.json(
+        { error: "Failed to load customer balances" },
+        { status: 500 },
+      );
+    }
+
     const profileMap = new Map(
       (profiles ?? []).map((profile) => {
         const customerName =
@@ -90,27 +86,67 @@ export async function GET() {
       }),
     );
 
-    /*
-     * Return withdrawal data with customer_name.
-     *
-     * user_id is deliberately removed from the response.
-     */
-    const result = withdrawals.map((withdrawal) => ({
-      id: withdrawal.id,
-      customer_name: profileMap.get(withdrawal.user_id) || "Unknown customer",
-      asset: withdrawal.asset,
-      network: withdrawal.network,
-      amount: Number(withdrawal.amount),
-      withdrawal_address: withdrawal.withdrawal_address,
-      memo_tag: withdrawal.memo_tag,
-      status: withdrawal.status,
-      transaction_hash: withdrawal.transaction_hash,
-      admin_notes: withdrawal.admin_notes,
-      created_at: withdrawal.created_at,
-      updated_at: withdrawal.updated_at,
-      processed_at: withdrawal.processed_at,
-      completed_at: withdrawal.completed_at,
-    }));
+    const assetBalanceMap = new Map(
+      (assetBalances ?? []).map((assetBalance) => {
+        const balance = Number(assetBalance.balance);
+
+        const reservedBalance = Number(assetBalance.reserved_balance);
+
+        return [
+          `${assetBalance.user_id}:${assetBalance.asset}`,
+          {
+            balance,
+            reservedBalance,
+            remainingBalance: balance - reservedBalance,
+          },
+        ];
+      }),
+    );
+
+    const result = withdrawals.map((withdrawal) => {
+      const balanceInfo = assetBalanceMap.get(
+        `${withdrawal.user_id}:${withdrawal.asset}`,
+      );
+
+      return {
+        id: withdrawal.id,
+
+        customer_name: profileMap.get(withdrawal.user_id) || "Unknown customer",
+
+        asset: withdrawal.asset,
+        network: withdrawal.network,
+
+        // Amount requested for this withdrawal
+        request_balance: Number(withdrawal.amount),
+
+        // User's current total balance
+        current_balance: balanceInfo?.balance ?? 0,
+
+        // Balance remaining after this request
+        remaining_balance:
+          balanceInfo?.balance !== undefined
+            ? balanceInfo.balance - Number(withdrawal.amount)
+            : 0,
+
+        withdrawal_address: withdrawal.withdrawal_address,
+
+        memo_tag: withdrawal.memo_tag,
+
+        status: withdrawal.status,
+
+        transaction_hash: withdrawal.transaction_hash,
+
+        admin_notes: withdrawal.admin_notes,
+
+        created_at: withdrawal.created_at,
+
+        updated_at: withdrawal.updated_at,
+
+        processed_at: withdrawal.processed_at,
+
+        completed_at: withdrawal.completed_at,
+      };
+    });
 
     return NextResponse.json(result);
   } catch (error) {

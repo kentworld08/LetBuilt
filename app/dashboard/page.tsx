@@ -39,10 +39,16 @@ type AdminWithdrawal = {
   customer_name: string;
   asset: string;
   network: string;
-  amount: number;
+
+  request_balance: number;
+  current_balance: number;
+  remaining_balance: number;
+
   withdrawal_address: string;
   memo_tag: string | null;
+
   status: "pending" | "processing" | "completed" | "rejected" | "cancelled";
+
   transaction_hash: string | null;
   admin_notes: string | null;
   created_at: string;
@@ -58,15 +64,14 @@ type AdminWithdrawal = {
 const Dashboard = () => {
   const router = useRouter();
 
-  /*
-   * Controls which dashboard view is visible.
-   *
-   * dashboard = normal customer dashboard
-   * admin = admin management dashboard
-   */
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [completionWithdrawalId, setCompletionWithdrawalId] =
+    useState<string | null>(null);
+
+  const [transactionHash, setTransactionHash] = useState("");
 
   const {
     data: profile,
@@ -96,14 +101,10 @@ const Dashboard = () => {
 
   const btcPrice = btcPriceData?.bitcoin ?? 0;
 
-  /*
-   * Admin withdrawals.
-   *
-   * This query only runs when:
-   *
-   * 1. The user is an admin.
-   * 2. The Admin view is selected.
-   */
+  /* =========================================================
+     ADMIN WITHDRAWALS
+  ========================================================= */
+
   const {
     data: adminWithdrawals = [],
     isLoading: isAdminWithdrawalsLoading,
@@ -220,6 +221,43 @@ const Dashboard = () => {
     }
   }
 
+
+  async function handleWithdrawalAction(
+    withdrawalId: string,
+    action: "approve" | "reject" | "complete",
+    transactionHash?: string,
+  ) {
+    try {
+      const response = await fetch(`/api/admin/withdrawals/${withdrawalId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+          ...(transactionHash
+            ? { transaction_hash: transactionHash.trim() }
+            : {}),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update withdrawal");
+      }
+
+      if (action === "complete") {
+        setCompletionWithdrawalId(null);
+        setTransactionHash("");
+      }
+
+      await refetchAdminWithdrawals();
+    } catch (error) {
+      console.error("Withdrawal action error:", error);
+    }
+  }
+
   /* =========================================================
      LOADING
   ========================================================= */
@@ -260,7 +298,6 @@ const Dashboard = () => {
         ====================================================== */}
 
         <aside className="hidden h-full w-64 shrink-0 border-r border-gray-200 bg-white lg:flex lg:flex-col">
-          {/* Logo */}
           <div className="flex h-20 items-center border-b border-gray-200 px-6">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-white">
@@ -271,9 +308,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 space-y-1 px-4 py-6">
-            {/* Dashboard */}
             <button
               type="button"
               onClick={openDashboard}
@@ -287,7 +322,6 @@ const Dashboard = () => {
               Dashboard
             </button>
 
-            {/* Portfolio */}
             <button
               type="button"
               onClick={() => {
@@ -305,7 +339,6 @@ const Dashboard = () => {
               Portfolio
             </button>
 
-            {/* Deposit */}
             <button
               type="button"
               onClick={() => router.push("/deposit")}
@@ -315,7 +348,6 @@ const Dashboard = () => {
               Deposit
             </button>
 
-            {/* Withdraw */}
             <button
               type="button"
               onClick={() => router.push("/withdraw")}
@@ -325,7 +357,6 @@ const Dashboard = () => {
               Withdraw
             </button>
 
-            {/* Transactions */}
             <button
               type="button"
               onClick={() => {
@@ -343,7 +374,6 @@ const Dashboard = () => {
               Transactions
             </button>
 
-            {/* Admin */}
             {profile?.role === "admin" && (
               <button
                 type="button"
@@ -360,7 +390,6 @@ const Dashboard = () => {
             )}
           </nav>
 
-          {/* Bottom Navigation */}
           <div className="border-t border-gray-200 p-4">
             <button
               type="button"
@@ -386,13 +415,10 @@ const Dashboard = () => {
         ====================================================== */}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* ===================================================
-              TOP BAR
-          ==================================================== */}
+          {/* TOP BAR */}
 
           <header className="z-20 flex h-20 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 sm:px-8">
             <div className="flex items-center gap-3">
-              {/* Mobile Menu */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
@@ -402,12 +428,10 @@ const Dashboard = () => {
                 <Menu size={22} />
               </button>
 
-              {/* Mobile Brand */}
               <div className="lg:hidden">
                 <p className="text-lg font-bold text-gray-900">LetBuilt</p>
               </div>
 
-              {/* Desktop Title */}
               <div className="hidden lg:block">
                 <p className="text-sm font-medium text-gray-500">
                   {activeView === "admin"
@@ -421,7 +445,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Profile */}
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-gray-900">
@@ -441,9 +464,7 @@ const Dashboard = () => {
             </div>
           </header>
 
-          {/* ===================================================
-              MOBILE MENU
-          ==================================================== */}
+          {/* MOBILE MENU */}
 
           {mobileMenuOpen && (
             <div className="fixed inset-0 z-50 lg:hidden">
@@ -453,7 +474,6 @@ const Dashboard = () => {
               />
 
               <aside className="relative flex h-full w-72 flex-col bg-white shadow-xl">
-                {/* Mobile Header */}
                 <div className="flex h-20 items-center justify-between border-b border-gray-200 px-5">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-white">
@@ -475,9 +495,7 @@ const Dashboard = () => {
                   </button>
                 </div>
 
-                {/* Mobile Navigation */}
                 <nav className="flex-1 space-y-1 px-4 py-6">
-                  {/* Dashboard */}
                   <button
                     type="button"
                     onClick={openDashboard}
@@ -491,7 +509,6 @@ const Dashboard = () => {
                     Dashboard
                   </button>
 
-                  {/* Portfolio */}
                   <button
                     type="button"
                     onClick={() => {
@@ -509,7 +526,6 @@ const Dashboard = () => {
                     Portfolio
                   </button>
 
-                  {/* Deposit */}
                   <button
                     type="button"
                     onClick={() => {
@@ -522,7 +538,6 @@ const Dashboard = () => {
                     Deposit
                   </button>
 
-                  {/* Withdraw */}
                   <button
                     type="button"
                     onClick={() => {
@@ -535,7 +550,6 @@ const Dashboard = () => {
                     Withdraw
                   </button>
 
-                  {/* Transactions */}
                   <button
                     type="button"
                     onClick={() => {
@@ -555,7 +569,6 @@ const Dashboard = () => {
                     Transactions
                   </button>
 
-                  {/* Admin */}
                   {profile?.role === "admin" && (
                     <button
                       type="button"
@@ -572,7 +585,6 @@ const Dashboard = () => {
                   )}
                 </nav>
 
-                {/* Mobile Logout */}
                 <div className="border-t border-gray-200 p-4">
                   <button
                     type="button"
@@ -587,19 +599,20 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* ===================================================
+          {/* =====================================================
               CONTENT
-          ==================================================== */}
+          ====================================================== */}
 
           <div className="flex-1 overflow-y-auto">
             <div className="mx-auto w-full max-w-7xl px-5 py-6 sm:px-8 sm:py-8">
               {/* =================================================
-                  NORMAL DASHBOARD VIEW
+                  NORMAL DASHBOARD
               ================================================== */}
 
               {activeView === "dashboard" && (
                 <>
-                  {/* Overview */}
+                  {/* OVERVIEW */}
+
                   <section id="overview">
                     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                       <div>
@@ -630,9 +643,9 @@ const Dashboard = () => {
                     </div>
                   </section>
 
-                  {/* Balance Cards */}
+                  {/* BALANCE CARDS */}
+
                   <section className="mt-8 grid gap-5 md:grid-cols-2">
-                    {/* Account Balance */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                       <div className="flex items-start justify-between">
                         <div>
@@ -677,7 +690,6 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    {/* Crypto Summary */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
                       <div className="flex items-start justify-between">
                         <div>
@@ -716,7 +728,8 @@ const Dashboard = () => {
                     </div>
                   </section>
 
-                  {/* Assets */}
+                  {/* ASSETS */}
+
                   <section
                     id="assets"
                     className="mt-8 rounded-2xl border border-gray-200 bg-white shadow-sm"
@@ -834,7 +847,8 @@ const Dashboard = () => {
                     )}
                   </section>
 
-                  {/* Quick Actions */}
+                  {/* QUICK ACTIONS */}
+
                   <section className="mt-8 grid gap-4 sm:grid-cols-2">
                     <button
                       type="button"
@@ -891,7 +905,8 @@ const Dashboard = () => {
                     </button>
                   </section>
 
-                  {/* Transactions */}
+                  {/* TRANSACTIONS */}
+
                   <section
                     id="transactions"
                     className="mt-8 rounded-2xl border border-gray-200 bg-white shadow-sm"
@@ -1007,9 +1022,9 @@ const Dashboard = () => {
 
               {activeView === "admin" && profile?.role === "admin" && (
                 <section className="min-h-full">
-                  {/* Withdrawal Requests */}
                   <div className="mt-8 rounded-2xl border border-gray-200 bg-white shadow-sm">
-                    {/* Header */}
+                    {/* ADMIN HEADER */}
+
                     <div className="flex flex-col gap-3 border-b border-gray-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900">
@@ -1017,8 +1032,7 @@ const Dashboard = () => {
                         </h2>
 
                         <p className="mt-1 text-sm text-gray-500">
-                          Customer withdrawal requests awaiting review or
-                          processing.
+                          Review and manage customer withdrawal requests.
                         </p>
                       </div>
 
@@ -1028,10 +1042,11 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    <div className="p-6">
-                      {/* API Error */}
+                    <div className="p-5">
+                      {/* ERROR */}
+
                       {isAdminWithdrawalsError ? (
-                        <div className="rounded-xl border border-red-200 bg-red-50 px-6 py-6 text-center">
+                        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-6 text-center">
                           <p className="font-medium text-red-700">
                             Failed to load withdrawal requests.
                           </p>
@@ -1039,14 +1054,15 @@ const Dashboard = () => {
                           <button
                             type="button"
                             onClick={() => refetchAdminWithdrawals()}
-                            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
+                            className="mt-3 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
                           >
                             Try again
                           </button>
                         </div>
                       ) : isAdminWithdrawalsLoading ? (
-                        /* Loading */
-                        <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 py-16">
+                        /* LOADING */
+
+                        <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 py-14">
                           <div className="text-center">
                             <div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-gray-200 border-t-orange-500" />
 
@@ -1056,13 +1072,14 @@ const Dashboard = () => {
                           </div>
                         </div>
                       ) : adminWithdrawals.length === 0 ? (
-                        /* Empty */
-                        <div className="rounded-xl border border-gray-200 bg-gray-50 px-6 py-16 text-center">
-                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
-                            <History size={21} />
+                        /* EMPTY */
+
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-14 text-center">
+                          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
+                            <History size={20} />
                           </div>
 
-                          <p className="mt-4 font-semibold text-gray-900">
+                          <p className="mt-3 font-semibold text-gray-900">
                             No withdrawal requests
                           </p>
 
@@ -1071,40 +1088,29 @@ const Dashboard = () => {
                           </p>
                         </div>
                       ) : (
-                        /* Requests */
-                        <div className="space-y-4">
+                        /* REQUEST LIST */
+
+                        <div className="space-y-3">
                           {adminWithdrawals.map((withdrawal) => (
                             <div
                               key={withdrawal.id}
-                              className="rounded-xl border border-gray-200 bg-gray-50 p-5"
+                              className="rounded-xl border border-gray-200 bg-gray-50 p-4"
                             >
-                              {/* Top */}
-                              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                <div className="flex items-center gap-4">
-                                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-lg font-bold uppercase text-orange-600">
-                                    {withdrawal.asset.slice(0, 1)}
-                                  </div>
+                              {/* CUSTOMER + STATUS */}
 
-                                  <div>
-                                    <p className="font-semibold text-gray-900">
-                                      {withdrawal.customer_name}
-                                    </p>
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="truncate font-semibold text-gray-900">
+                                    {withdrawal.customer_name}
+                                  </p>
 
-                                    <p className="mt-1 text-sm text-gray-500">
-                                      Requested{" "}
-                                      <span className="font-semibold text-gray-800">
-                                        {withdrawal.amount} {withdrawal.asset}
-                                      </span>
-                                    </p>
-
-                                    <p className="mt-1 text-xs text-gray-500">
-                                      {withdrawal.network}
-                                    </p>
-                                  </div>
+                                  <p className="mt-0.5 text-xs text-gray-500">
+                                    Withdrawal request
+                                  </p>
                                 </div>
 
                                 <span
-                                  className={`w-fit rounded-full px-3 py-1 text-xs font-semibold capitalize ${getWithdrawalStatusClass(
+                                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${getWithdrawalStatusClass(
                                     withdrawal.status,
                                   )}`}
                                 >
@@ -1112,135 +1118,260 @@ const Dashboard = () => {
                                 </span>
                               </div>
 
-                              {/* Requested Amount */}
-                              <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                                <div className="rounded-lg border border-gray-200 bg-white p-4">
-                                  <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                    Requested Amount
+                              {/* BALANCE SUMMARY */}
+
+                              <div className="mt-3 grid grid-cols-3 gap-2">
+                                {/* CURRENT */}
+
+                                <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
+                                  <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                                    Current
                                   </p>
 
-                                  <p className="mt-1 text-lg font-bold text-gray-900">
-                                    {withdrawal.amount} {withdrawal.asset}
-                                  </p>
-                                </div>
-
-                                <div className="rounded-lg border border-gray-200 bg-white p-4">
-                                  <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                    Network
-                                  </p>
-
-                                  <p className="mt-1 text-sm font-semibold text-gray-900">
-                                    {withdrawal.network}
+                                  <p className="mt-0.5 truncate text-sm font-bold text-gray-900">
+                                    {formatCryptoBalance(
+                                      withdrawal.current_balance,
+                                    )}{" "}
+                                    {withdrawal.asset}
                                   </p>
                                 </div>
 
-                                <div className="rounded-lg border border-gray-200 bg-white p-4">
-                                  <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                    Requested
+                                {/* REQUEST */}
+
+                                <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5">
+                                  <p className="text-[10px] font-medium uppercase tracking-wide text-orange-500">
+                                    Request
                                   </p>
 
-                                  <p className="mt-1 text-sm font-semibold text-gray-900">
-                                    {new Date(
-                                      withdrawal.created_at,
-                                    ).toLocaleString()}
+                                  <p className="mt-0.5 truncate text-sm font-bold text-orange-600">
+                                    {formatCryptoBalance(
+                                      withdrawal.request_balance,
+                                    )}{" "}
+                                    {withdrawal.asset}
+                                  </p>
+                                </div>
+
+                                {/* REMAINING */}
+
+                                <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
+                                  <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                                    Remaining
+                                  </p>
+
+                                  <p
+                                    className={`mt-0.5 truncate text-sm font-bold ${
+                                      withdrawal.remaining_balance < 0
+                                        ? "text-red-600"
+                                        : "text-gray-900"
+                                    }`}
+                                  >
+                                    {formatCryptoBalance(
+                                      withdrawal.remaining_balance,
+                                    )}{" "}
+                                    {withdrawal.asset}
                                   </p>
                                 </div>
                               </div>
 
-                              {/* Withdrawal Address */}
-                              <div className="mt-4">
-                                <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                              {/* NETWORK + DATE */}
+
+                              <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-gray-500">
+                                <span>
+                                  <span className="text-gray-400">
+                                    Network:
+                                  </span>{" "}
+                                  <span className="font-semibold text-gray-700">
+                                    {withdrawal.network}
+                                  </span>
+                                </span>
+
+                                <span>
+                                  <span className="text-gray-400">
+                                    Requested:
+                                  </span>{" "}
+                                  <span className="font-semibold text-gray-700">
+                                    {new Date(
+                                      withdrawal.created_at,
+                                    ).toLocaleString()}
+                                  </span>
+                                </span>
+                              </div>
+
+                              {/* ADDRESS */}
+
+                              <div className="mt-3">
+                                <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
                                   Withdrawal Address
                                 </p>
 
-                                <p className="mt-1 break-all rounded-lg border border-gray-200 bg-white p-3 font-mono text-xs text-gray-700">
+                                <p className="mt-1 break-all rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-[11px] leading-relaxed text-gray-700">
                                   {withdrawal.withdrawal_address}
                                 </p>
                               </div>
 
-                              {/* Memo */}
-                              {withdrawal.memo_tag && (
-                                <div className="mt-4">
-                                  <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                    Memo / Tag
-                                  </p>
+                              {/* MEMO */}
 
-                                  <p className="mt-1 text-sm text-gray-700">
-                                    {withdrawal.memo_tag}
-                                  </p>
+                              {withdrawal.memo_tag && (
+                                <div className="mt-2 text-xs text-gray-600">
+                                  <span className="font-medium text-gray-400">
+                                    Memo / Tag:
+                                  </span>{" "}
+                                  {withdrawal.memo_tag}
                                 </div>
                               )}
 
-                              {/* Transaction ID */}
+                              {/* TRANSACTION ID */}
+
                               {withdrawal.transaction_hash && (
-                                <div className="mt-4">
-                                  <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                <div className="mt-2">
+                                  <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
                                     Transaction ID
                                   </p>
 
-                                  <p className="mt-1 break-all font-mono text-xs text-gray-700">
+                                  <p className="mt-1 break-all font-mono text-[11px] text-gray-700">
                                     {withdrawal.transaction_hash}
                                   </p>
                                 </div>
                               )}
 
-                              {/* Pending Actions */}
+                              {/* ACTIONS */}
+
                               {withdrawal.status === "pending" && (
-                                <div className="mt-5 flex flex-col gap-3 border-t border-gray-200 pt-5 sm:flex-row sm:justify-end">
+                                <div className="mt-4 flex justify-end gap-2 border-t border-gray-200 pt-3">
                                   <button
                                     type="button"
-                                    className="rounded-lg border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                                    onClick={() =>
+                                      handleWithdrawalAction(
+                                        withdrawal.id,
+                                        "reject",
+                                      )
+                                    }
+                                    className="rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
                                   >
                                     Reject
                                   </button>
 
                                   <button
                                     type="button"
-                                    className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
+                                    onClick={() =>
+                                      handleWithdrawalAction(
+                                        withdrawal.id,
+                                        "approve",
+                                      )
+                                    }
+                                    className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-600"
                                   >
                                     Approve
                                   </button>
                                 </div>
                               )}
 
-                              {/* Processing */}
+                              {/* PROCESSING */}
+
                               {withdrawal.status === "processing" && (
-                                <div className="mt-5 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-                                  <p className="text-sm font-medium text-blue-700">
-                                    This withdrawal has been approved and is
-                                    waiting for completion.
-                                  </p>
+                                <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3">
+                                  {completionWithdrawalId === withdrawal.id ? (
+                                    <div className="space-y-3">
+                                      <div>
+                                        <p className="text-xs font-semibold text-blue-700">
+                                          Enter transaction ID
+                                        </p>
+
+                                        <p className="mt-1 text-[11px] text-blue-600">
+                                          Enter the blockchain transaction ID/hash after the withdrawal has been sent.
+                                        </p>
+                                      </div>
+
+                                      <input
+                                        type="text"
+                                        value={transactionHash}
+                                        onChange={(event) =>
+                                          setTransactionHash(event.target.value)
+                                        }
+                                        placeholder="Enter transaction ID / hash"
+                                        className="w-full rounded-lg border border-blue-200 bg-white px-3 py-2.5 text-xs text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                      />
+
+                                      <div className="flex justify-end gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setCompletionWithdrawalId(null);
+                                            setTransactionHash("");
+                                          }}
+                                          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
+                                        >
+                                          Cancel
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          disabled={!transactionHash.trim()}
+                                          onClick={() =>
+                                            handleWithdrawalAction(
+                                              withdrawal.id,
+                                              "complete",
+                                              transactionHash,
+                                            )
+                                          }
+                                          className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          Confirm Completion
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                      <p className="text-xs font-medium text-blue-700">
+                                        Approved and waiting for completion.
+                                      </p>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setCompletionWithdrawalId(withdrawal.id);
+                                          setTransactionHash("");
+                                        }}
+                                        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                                      >
+                                        Complete
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
-                              {/* Completed */}
+                              {/* COMPLETED */}
+
                               {withdrawal.status === "completed" && (
-                                <div className="mt-5 rounded-lg border border-green-100 bg-green-50 px-4 py-3">
-                                  <p className="text-sm font-medium text-green-700">
-                                    This withdrawal has been completed.
+                                <div className="mt-3 rounded-lg border border-green-100 bg-green-50 px-3 py-2.5">
+                                  <p className="text-xs font-medium text-green-700">
+                                    Withdrawal completed successfully.
                                   </p>
                                 </div>
                               )}
 
-                              {/* Rejected */}
+                              {/* REJECTED */}
+
                               {withdrawal.status === "rejected" && (
-                                <div className="mt-5 rounded-lg border border-red-100 bg-red-50 px-4 py-3">
-                                  <p className="text-sm font-medium text-red-700">
+                                <div className="mt-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5">
+                                  <p className="text-xs font-medium text-red-700">
                                     This withdrawal was rejected.
                                   </p>
 
                                   {withdrawal.admin_notes && (
-                                    <p className="mt-1 text-sm text-red-600">
+                                    <p className="mt-1 text-xs text-red-600">
                                       Note: {withdrawal.admin_notes}
                                     </p>
                                   )}
                                 </div>
                               )}
 
-                              {/* Cancelled */}
+                              {/* CANCELLED */}
+
                               {withdrawal.status === "cancelled" && (
-                                <div className="mt-5 rounded-lg border border-gray-200 bg-gray-100 px-4 py-3">
-                                  <p className="text-sm font-medium text-gray-700">
+                                <div className="mt-3 rounded-lg border border-gray-200 bg-gray-100 px-3 py-2.5">
+                                  <p className="text-xs font-medium text-gray-700">
                                     This withdrawal was cancelled.
                                   </p>
                                 </div>
