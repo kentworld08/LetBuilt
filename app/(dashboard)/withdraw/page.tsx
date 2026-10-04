@@ -13,7 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { useAssetBalances } from "../hooks/use-asset-balances";
+import { useAssetBalances } from "@/app/hooks/use-asset-balances";
 
 type CryptoOption = {
   asset: "BTC" | "USDT";

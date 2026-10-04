@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
 import { useProfile } from "@/app/hooks/use-profile";
-import { useAccountBalance } from "../hooks/use-account-balance";
-import { useAssetBalances } from "../hooks/use-asset-balances";
-import { useTransactions } from "../hooks/use-transactions";
-import { useBtcPrice } from "../hooks/use-btc-price";
+import { useAccountBalance } from "@/app/hooks/use-account-balance";
+import { useAssetBalances } from "@/app/hooks/use-asset-balances";
+import { useTransactions } from "@/app/hooks/use-transactions";
+import { useBtcPrice } from "@/app/hooks/use-btc-price";
 
 import {
   ArrowDownToLine,
