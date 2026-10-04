@@ -8,22 +8,30 @@ import { useProfile } from "@/app/hooks/use-profile";
 import { useAccountBalance } from "@/app/hooks/use-account-balance";
 import { useAssetBalances } from "@/app/hooks/use-asset-balances";
 import { useTransactions } from "@/app/hooks/use-transactions";
+import { useWithdrawals } from "@/app/hooks/use-withdrawals";
 import { useBtcPrice } from "@/app/hooks/use-btc-price";
 
 import {
+  AlertCircle,
   ArrowDownToLine,
   ArrowUpFromLine,
   BarChart3,
+  CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   CircleDollarSign,
+  Clock3,
   History,
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   Settings,
   ShieldCheck,
   Wallet,
   X,
+  XCircle,
 } from "lucide-react";
 
 import { createClient } from "@/utils/supabase/client";
@@ -33,6 +41,13 @@ import { createClient } from "@/utils/supabase/client";
 ========================================================= */
 
 type ActiveView = "dashboard" | "admin";
+
+type WithdrawalStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "rejected"
+  | "cancelled";
 
 type AdminWithdrawal = {
   id: string;
@@ -47,7 +62,7 @@ type AdminWithdrawal = {
   withdrawal_address: string;
   memo_tag: string | null;
 
-  status: "pending" | "processing" | "completed" | "rejected" | "cancelled";
+  status: WithdrawalStatus;
 
   transaction_hash: string | null;
   admin_notes: string | null;
@@ -68,10 +83,25 @@ const Dashboard = () => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [completionWithdrawalId, setCompletionWithdrawalId] =
-    useState<string | null>(null);
+  const [withdrawalsExpanded, setWithdrawalsExpanded] = useState(false);
+
+  const [transactionsExpanded, setTransactionsExpanded] = useState(false);
+
+  const [completionWithdrawalId, setCompletionWithdrawalId] = useState<
+    string | null
+  >(null);
 
   const [transactionHash, setTransactionHash] = useState("");
+
+  const [rejectionWithdrawalId, setRejectionWithdrawalId] = useState<
+    string | null
+  >(null);
+
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  /* =========================================================
+     USER DATA
+  ========================================================= */
 
   const {
     data: profile,
@@ -96,6 +126,12 @@ const Dashboard = () => {
     isLoading: isTransactionsLoading,
     error: transactionsError,
   } = useTransactions();
+
+  const {
+    data: withdrawals = [],
+    isLoading: isWithdrawalsLoading,
+    error: withdrawalsError,
+  } = useWithdrawals();
 
   const { data: btcPriceData, isLoading: isBtcPriceLoading } = useBtcPrice();
 
@@ -124,11 +160,22 @@ const Dashboard = () => {
     enabled: profile?.role === "admin" && activeView === "admin",
   });
 
+  /* =========================================================
+     LOADING / ERROR
+  ========================================================= */
+
   const loading =
     isProfileLoading ||
     isBalanceLoading ||
     isAssetsLoading ||
     isTransactionsLoading;
+
+  /*
+   * Withdrawal loading is intentionally NOT included here.
+   *
+   * A temporary withdrawal-query issue should not prevent
+   * the rest of the dashboard from loading.
+   */
 
   const error =
     profileError?.message ||
@@ -202,7 +249,7 @@ const Dashboard = () => {
     });
   }
 
-  function getWithdrawalStatusClass(status: AdminWithdrawal["status"]) {
+  function getWithdrawalStatusClass(status: WithdrawalStatus) {
     switch (status) {
       case "pending":
         return "bg-yellow-50 text-yellow-700";
@@ -216,16 +263,23 @@ const Dashboard = () => {
       case "rejected":
         return "bg-red-50 text-red-700";
 
+      case "cancelled":
+        return "bg-gray-100 text-gray-700";
+
       default:
         return "bg-gray-100 text-gray-700";
     }
   }
 
+  /* =========================================================
+     WITHDRAWAL ACTIONS
+  ========================================================= */
 
   async function handleWithdrawalAction(
     withdrawalId: string,
     action: "approve" | "reject" | "complete",
     transactionHash?: string,
+    adminNotes?: string,
   ) {
     try {
       const response = await fetch(`/api/admin/withdrawals/${withdrawalId}`, {
@@ -235,8 +289,17 @@ const Dashboard = () => {
         },
         body: JSON.stringify({
           action,
+
           ...(transactionHash
-            ? { transaction_hash: transactionHash.trim() }
+            ? {
+                transaction_hash: transactionHash.trim(),
+              }
+            : {}),
+
+          ...(adminNotes
+            ? {
+                admin_notes: adminNotes.trim(),
+              }
             : {}),
         }),
       });
@@ -250,6 +313,11 @@ const Dashboard = () => {
       if (action === "complete") {
         setCompletionWithdrawalId(null);
         setTransactionHash("");
+      }
+
+      if (action === "reject") {
+        setRejectionWithdrawalId(null);
+        setRejectionReason("");
       }
 
       await refetchAdminWithdrawals();
@@ -361,6 +429,25 @@ const Dashboard = () => {
               type="button"
               onClick={() => {
                 openDashboard();
+                setWithdrawalsExpanded(true);
+
+                setTimeout(() => {
+                  document.getElementById("withdrawals")?.scrollIntoView({
+                    behavior: "smooth",
+                  });
+                }, 0);
+              }}
+              className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+            >
+              <Clock3 size={19} />
+              Withdrawals
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                openDashboard();
+                setTransactionsExpanded(true);
 
                 setTimeout(() => {
                   document.getElementById("transactions")?.scrollIntoView({
@@ -554,6 +641,25 @@ const Dashboard = () => {
                     type="button"
                     onClick={() => {
                       openDashboard();
+                      setWithdrawalsExpanded(true);
+
+                      setTimeout(() => {
+                        document.getElementById("withdrawals")?.scrollIntoView({
+                          behavior: "smooth",
+                        });
+                      }, 0);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    <Clock3 size={19} />
+                    Withdrawals
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openDashboard();
+                      setTransactionsExpanded(true);
 
                       setTimeout(() => {
                         document
@@ -905,111 +1011,451 @@ const Dashboard = () => {
                     </button>
                   </section>
 
-                  {/* TRANSACTIONS */}
+                  {/* =================================================
+                      WITHDRAWAL STATUS - COLLAPSIBLE
+                  ================================================== */}
+
+                  <section
+                    id="withdrawals"
+                    className="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setWithdrawalsExpanded((previous) => !previous)
+                      }
+                      className="flex w-full items-center justify-between px-6 py-5 text-left transition hover:bg-gray-50"
+                      aria-expanded={withdrawalsExpanded}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                          <ArrowUpFromLine size={20} />
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                              Withdrawal Requests
+                            </h2>
+
+                            {withdrawals.length > 0 && (
+                              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+                                {withdrawals.length}
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="mt-1 text-sm text-gray-600">
+                            Track the progress of your withdrawal requests.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 text-gray-400">
+                        {withdrawalsExpanded ? (
+                          <ChevronUp size={21} />
+                        ) : (
+                          <ChevronDown size={21} />
+                        )}
+                      </div>
+                    </button>
+
+                    {withdrawalsExpanded && (
+                      <div className="border-t border-gray-200">
+                        {isWithdrawalsLoading ? (
+                          <div className="px-6 py-10">
+                            <div className="animate-pulse space-y-4">
+                              <div className="h-5 w-40 rounded bg-gray-200" />
+                              <div className="h-3 w-64 rounded bg-gray-200" />
+                              <div className="h-2 w-full rounded bg-gray-200" />
+                            </div>
+                          </div>
+                        ) : withdrawalsError ? (
+                          <div className="px-6 py-10 text-center">
+                            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-500">
+                              <AlertCircle size={21} />
+                            </div>
+
+                            <p className="mt-3 font-medium text-gray-900">
+                              Unable to load withdrawal requests
+                            </p>
+
+                            <p className="mt-1 text-sm text-gray-600">
+                              Please refresh the page and try again.
+                            </p>
+                          </div>
+                        ) : withdrawals.length === 0 ? (
+                          <div className="px-6 py-12 text-center">
+                            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                              <History size={21} />
+                            </div>
+
+                            <p className="mt-3 font-medium text-gray-900">
+                              No withdrawal requests
+                            </p>
+
+                            <p className="mt-1 text-sm text-gray-600">
+                              Your withdrawal requests will appear here after
+                              you submit one.
+                            </p>
+
+                            <button
+                              type="button"
+                              onClick={() => router.push("/withdraw")}
+                              className="mt-5 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
+                            >
+                              Make a withdrawal
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-200">
+                            {withdrawals.slice(0, 5).map((withdrawal) => {
+                              const isPending = withdrawal.status === "pending";
+
+                              const isProcessing =
+                                withdrawal.status === "processing";
+
+                              const isCompleted =
+                                withdrawal.status === "completed";
+
+                              const isRejected =
+                                withdrawal.status === "rejected";
+
+                              const isCancelled =
+                                withdrawal.status === "cancelled";
+
+                              const steps = [
+                                {
+                                  label: "Submitted",
+                                  completed: true,
+                                },
+                                {
+                                  label: "Approved",
+                                  completed: isProcessing || isCompleted,
+                                },
+                                {
+                                  label: "Processing",
+                                  completed: isProcessing || isCompleted,
+                                },
+                                {
+                                  label: "Completed",
+                                  completed: isCompleted,
+                                },
+                              ];
+
+                              return (
+                                <div key={withdrawal.id} className="px-6 py-6">
+                                  {/* REQUEST HEADER */}
+
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                      <p className="text-lg font-semibold text-gray-900">
+                                        {formatCryptoBalance(
+                                          Number(withdrawal.amount),
+                                        )}{" "}
+                                        {withdrawal.asset}
+                                      </p>
+
+                                      <p className="mt-1 text-sm text-gray-500">
+                                        {withdrawal.network}
+                                      </p>
+
+                                      <p className="mt-1 text-xs text-gray-400">
+                                        Requested{" "}
+                                        {new Date(
+                                          withdrawal.created_at,
+                                        ).toLocaleString()}
+                                      </p>
+                                    </div>
+
+                                    <span
+                                      className={`w-fit rounded-full px-3 py-1 text-xs font-semibold capitalize ${getWithdrawalStatusClass(
+                                        withdrawal.status,
+                                      )}`}
+                                    >
+                                      {withdrawal.status}
+                                    </span>
+                                  </div>
+
+                                  {/* REJECTED */}
+
+                                  {isRejected && (
+                                    <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
+                                      <div className="flex gap-3">
+                                        <XCircle
+                                          size={20}
+                                          className="mt-0.5 shrink-0 text-red-500"
+                                        />
+
+                                        <div>
+                                          <p className="font-semibold text-red-700">
+                                            Withdrawal rejected
+                                          </p>
+
+                                          <p className="mt-1 text-sm leading-6 text-red-600">
+                                            {withdrawal.admin_notes ||
+                                              "Your withdrawal request was rejected. Please contact support for assistance."}
+                                          </p>
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              router.push("/contact")
+                                            }
+                                            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
+                                          >
+                                            <MessageCircle size={15} />
+                                            Contact Support
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* CANCELLED */}
+
+                                  {isCancelled && (
+                                    <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                      <div className="flex gap-3">
+                                        <XCircle
+                                          size={20}
+                                          className="mt-0.5 shrink-0 text-gray-500"
+                                        />
+
+                                        <p className="text-sm text-gray-600">
+                                          This withdrawal request was cancelled.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* NORMAL PROGRESS */}
+
+                                  {!isRejected && !isCancelled && (
+                                    <>
+                                      <div className="mt-7 overflow-x-auto">
+                                        <div className="flex min-w-[520px] items-start">
+                                          {steps.map((step, index) => (
+                                            <div
+                                              key={step.label}
+                                              className="flex flex-1 items-start"
+                                            >
+                                              <div className="flex flex-col items-center">
+                                                <div
+                                                  className={`flex h-9 w-9 items-center justify-center rounded-full border ${
+                                                    step.completed
+                                                      ? "border-green-500 bg-green-500 text-white"
+                                                      : isPending && index === 1
+                                                        ? "border-yellow-400 bg-yellow-50 text-yellow-600"
+                                                        : isProcessing &&
+                                                            index === 2
+                                                          ? "border-blue-500 bg-blue-50 text-blue-600"
+                                                          : "border-gray-200 bg-gray-50 text-gray-400"
+                                                  }`}
+                                                >
+                                                  {step.completed ? (
+                                                    <CheckCircle2 size={18} />
+                                                  ) : isPending &&
+                                                    index === 1 ? (
+                                                    <Clock3 size={18} />
+                                                  ) : isProcessing &&
+                                                    index === 2 ? (
+                                                    <Clock3 size={18} />
+                                                  ) : (
+                                                    index + 1
+                                                  )}
+                                                </div>
+
+                                                <span
+                                                  className={`mt-2 whitespace-nowrap text-xs ${
+                                                    step.completed
+                                                      ? "font-medium text-gray-700"
+                                                      : "text-gray-400"
+                                                  }`}
+                                                >
+                                                  {step.label}
+                                                </span>
+                                              </div>
+
+                                              {index < steps.length - 1 && (
+                                                <div
+                                                  className={`mx-2 mt-4 h-px flex-1 ${
+                                                    steps[index + 1].completed
+                                                      ? "bg-green-500"
+                                                      : "bg-gray-200"
+                                                  }`}
+                                                />
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      {/* STATUS MESSAGE */}
+
+                                      <div className="mt-5 rounded-xl bg-gray-50 px-4 py-3">
+                                        <p className="text-sm text-gray-600">
+                                          {isPending &&
+                                            "Your withdrawal request has been submitted."}
+
+                                          {isProcessing &&
+                                            "Your withdrawal has been approved and is currently being processed."}
+
+                                          {isCompleted &&
+                                            "Your withdrawal has been completed successfully."}
+                                        </p>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </section>
+
+                  {/* =================================================
+                      TRANSACTIONS - COLLAPSIBLE
+                  ================================================== */}
 
                   <section
                     id="transactions"
-                    className="mt-8 rounded-2xl border border-gray-200 bg-white shadow-sm"
+                    className="mt-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
                   >
-                    <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
-                      <div>
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          Recent Transactions
-                        </h2>
-
-                        <p className="mt-1 text-sm text-gray-600">
-                          Your latest account activity.
-                        </p>
-                      </div>
-
-                      <History className="text-gray-400" size={21} />
-                    </div>
-
-                    {transactions.length === 0 ? (
-                      <div className="px-6 py-12 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                          <History size={22} />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTransactionsExpanded((previous) => !previous)
+                      }
+                      className="flex w-full items-center justify-between px-6 py-5 text-left transition hover:bg-gray-50"
+                      aria-expanded={transactionsExpanded}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-600">
+                          <History size={20} />
                         </div>
 
-                        <p className="mt-4 font-medium text-gray-900">
-                          No transactions yet
-                        </p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                              Recent Transactions
+                            </h2>
 
-                        <p className="mt-1 text-sm text-gray-600">
-                          Your account activity will appear here.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-gray-200">
-                        {transactions.map((transaction) => (
-                          <div
-                            key={transaction.id}
-                            className="flex items-center justify-between gap-4 px-6 py-5"
-                          >
-                            <div className="flex min-w-0 items-center gap-4">
-                              <div
-                                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                                  transaction.type === "withdrawal"
-                                    ? "bg-red-50 text-red-600"
-                                    : "bg-green-50 text-green-600"
-                                }`}
-                              >
-                                {transaction.type === "withdrawal" ? (
-                                  <ArrowUpFromLine size={18} />
-                                ) : (
-                                  <ArrowDownToLine size={18} />
-                                )}
-                              </div>
-
-                              <div className="min-w-0">
-                                <p className="truncate font-semibold capitalize text-gray-900">
-                                  {transaction.type}
-                                </p>
-
-                                <p className="mt-1 truncate text-sm text-gray-600">
-                                  {transaction.description ||
-                                    "Account transaction"}
-                                </p>
-
-                                <p className="mt-1 text-xs text-gray-500">
-                                  {new Date(
-                                    transaction.created_at,
-                                  ).toLocaleString()}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="shrink-0 text-right">
-                              <p
-                                className={`font-semibold ${
-                                  transaction.type === "withdrawal"
-                                    ? "text-red-600"
-                                    : "text-green-600"
-                                }`}
-                              >
-                                {transaction.type === "withdrawal" ? "-" : "+"}
-                                {formatTransactionAmount(
-                                  transaction.amount,
-                                )}{" "}
-                                {transaction.currency}
-                              </p>
-
-                              <span
-                                className={`mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
-                                  transaction.status === "completed"
-                                    ? "bg-green-50 text-green-700"
-                                    : transaction.status === "pending"
-                                      ? "bg-yellow-50 text-yellow-700"
-                                      : transaction.status === "failed"
-                                        ? "bg-red-50 text-red-700"
-                                        : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                {transaction.status}
+                            {transactions.length > 0 && (
+                              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+                                {transactions.length}
                               </span>
-                            </div>
+                            )}
                           </div>
-                        ))}
+
+                          <p className="mt-1 text-sm text-gray-600">
+                            Your latest account activity.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 text-gray-400">
+                        {transactionsExpanded ? (
+                          <ChevronUp size={21} />
+                        ) : (
+                          <ChevronDown size={21} />
+                        )}
+                      </div>
+                    </button>
+
+                    {transactionsExpanded && (
+                      <div className="border-t border-gray-200">
+                        {transactions.length === 0 ? (
+                          <div className="px-6 py-12 text-center">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                              <History size={22} />
+                            </div>
+
+                            <p className="mt-4 font-medium text-gray-900">
+                              No transactions yet
+                            </p>
+
+                            <p className="mt-1 text-sm text-gray-600">
+                              Your account activity will appear here.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-200">
+                            {transactions.map((transaction) => (
+                              <div
+                                key={transaction.id}
+                                className="flex items-center justify-between gap-4 px-6 py-5"
+                              >
+                                <div className="flex min-w-0 items-center gap-4">
+                                  <div
+                                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                                      transaction.type === "withdrawal"
+                                        ? "bg-red-50 text-red-600"
+                                        : "bg-green-50 text-green-600"
+                                    }`}
+                                  >
+                                    {transaction.type === "withdrawal" ? (
+                                      <ArrowUpFromLine size={18} />
+                                    ) : (
+                                      <ArrowDownToLine size={18} />
+                                    )}
+                                  </div>
+
+                                  <div className="min-w-0">
+                                    <p className="truncate font-semibold capitalize text-gray-900">
+                                      {transaction.type}
+                                    </p>
+
+                                    <p className="mt-1 truncate text-sm text-gray-600">
+                                      {transaction.description ||
+                                        "Account transaction"}
+                                    </p>
+
+                                    <p className="mt-1 text-xs text-gray-500">
+                                      {new Date(
+                                        transaction.created_at,
+                                      ).toLocaleString()}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="shrink-0 text-right">
+                                  <p
+                                    className={`font-semibold ${
+                                      transaction.type === "withdrawal"
+                                        ? "text-red-600"
+                                        : "text-green-600"
+                                    }`}
+                                  >
+                                    {transaction.type === "withdrawal"
+                                      ? "-"
+                                      : "+"}
+                                    {formatTransactionAmount(
+                                      transaction.amount,
+                                    )}{" "}
+                                    {transaction.currency}
+                                  </p>
+
+                                  <span
+                                    className={`mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
+                                      transaction.status === "completed"
+                                        ? "bg-green-50 text-green-700"
+                                        : transaction.status === "pending"
+                                          ? "bg-yellow-50 text-yellow-700"
+                                          : transaction.status === "failed"
+                                            ? "bg-red-50 text-red-700"
+                                            : "bg-gray-100 text-gray-700"
+                                    }`}
+                                  >
+                                    {transaction.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </section>
@@ -1060,8 +1506,6 @@ const Dashboard = () => {
                           </button>
                         </div>
                       ) : isAdminWithdrawalsLoading ? (
-                        /* LOADING */
-
                         <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 py-14">
                           <div className="text-center">
                             <div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-gray-200 border-t-orange-500" />
@@ -1072,8 +1516,6 @@ const Dashboard = () => {
                           </div>
                         </div>
                       ) : adminWithdrawals.length === 0 ? (
-                        /* EMPTY */
-
                         <div className="rounded-xl border border-gray-200 bg-gray-50 px-5 py-14 text-center">
                           <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
                             <History size={20} />
@@ -1088,8 +1530,6 @@ const Dashboard = () => {
                           </p>
                         </div>
                       ) : (
-                        /* REQUEST LIST */
-
                         <div className="space-y-3">
                           {adminWithdrawals.map((withdrawal) => (
                             <div
@@ -1121,8 +1561,6 @@ const Dashboard = () => {
                               {/* BALANCE SUMMARY */}
 
                               <div className="mt-3 grid grid-cols-3 gap-2">
-                                {/* CURRENT */}
-
                                 <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
                                   <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
                                     Current
@@ -1136,8 +1574,6 @@ const Dashboard = () => {
                                   </p>
                                 </div>
 
-                                {/* REQUEST */}
-
                                 <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5">
                                   <p className="text-[10px] font-medium uppercase tracking-wide text-orange-500">
                                     Request
@@ -1150,8 +1586,6 @@ const Dashboard = () => {
                                     {withdrawal.asset}
                                   </p>
                                 </div>
-
-                                {/* REMAINING */}
 
                                 <div className="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
                                   <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
@@ -1237,32 +1671,86 @@ const Dashboard = () => {
                               {/* ACTIONS */}
 
                               {withdrawal.status === "pending" && (
-                                <div className="mt-4 flex justify-end gap-2 border-t border-gray-200 pt-3">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleWithdrawalAction(
-                                        withdrawal.id,
-                                        "reject",
-                                      )
-                                    }
-                                    className="rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
-                                  >
-                                    Reject
-                                  </button>
+                                <div className="mt-4 border-t border-gray-200 pt-3">
+                                  {rejectionWithdrawalId === withdrawal.id ? (
+                                    <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                                      <p className="text-sm font-semibold text-red-700">
+                                        Reject withdrawal
+                                      </p>
 
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleWithdrawalAction(
-                                        withdrawal.id,
-                                        "approve",
-                                      )
-                                    }
-                                    className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-600"
-                                  >
-                                    Approve
-                                  </button>
+                                      <p className="mt-1 text-xs text-red-600">
+                                        Please provide a reason for rejecting
+                                        this withdrawal request.
+                                      </p>
+
+                                      <textarea
+                                        value={rejectionReason}
+                                        onChange={(event) =>
+                                          setRejectionReason(event.target.value)
+                                        }
+                                        placeholder="Enter rejection reason..."
+                                        rows={3}
+                                        className="mt-3 w-full rounded-lg border border-red-200 bg-white px-3 py-2.5 text-xs text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                                      />
+
+                                      <div className="mt-3 flex justify-end gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setRejectionWithdrawalId(null);
+                                            setRejectionReason("");
+                                          }}
+                                          className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
+                                        >
+                                          Cancel
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          disabled={!rejectionReason.trim()}
+                                          onClick={() =>
+                                            handleWithdrawalAction(
+                                              withdrawal.id,
+                                              "reject",
+                                              undefined,
+                                              rejectionReason,
+                                            )
+                                          }
+                                          className="rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                          Confirm Rejection
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex justify-end gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setRejectionWithdrawalId(
+                                            withdrawal.id,
+                                          );
+                                          setRejectionReason("");
+                                        }}
+                                        className="rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                                      >
+                                        Reject
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleWithdrawalAction(
+                                            withdrawal.id,
+                                            "approve",
+                                          )
+                                        }
+                                        className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-600"
+                                      >
+                                        Approve
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
@@ -1278,7 +1766,9 @@ const Dashboard = () => {
                                         </p>
 
                                         <p className="mt-1 text-[11px] text-blue-600">
-                                          Enter the blockchain transaction ID/hash after the withdrawal has been sent.
+                                          Enter the blockchain transaction
+                                          ID/hash after the withdrawal has been
+                                          sent.
                                         </p>
                                       </div>
 
@@ -1329,7 +1819,9 @@ const Dashboard = () => {
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          setCompletionWithdrawalId(withdrawal.id);
+                                          setCompletionWithdrawalId(
+                                            withdrawal.id,
+                                          );
                                           setTransactionHash("");
                                         }}
                                         className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"

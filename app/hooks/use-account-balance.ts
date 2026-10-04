@@ -1,41 +1,52 @@
-import { useQuery } from "@tanstack/react-query";
-import { createClient } from "@/utils/supabase/client";
+import { useMemo } from "react";
+import { useAssetBalances } from "@/app/hooks/use-asset-balances";
+import { useCryptoPrices } from "@/app/hooks/use-crypto-prices";
+
+const assetPriceKey = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  USDT: "tether",
+  USDC: "usd_coin",
+} as const;
 
 export function useAccountBalance() {
-  return useQuery<number>({
-    queryKey: ["account-balance"],
-    queryFn: async () => {
-      const supabase = createClient();
+  const {
+    data: assetBalances = [],
+    isLoading: isAssetsLoading,
+    error: assetsError,
+  } = useAssetBalances();
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+  const {
+    data: prices,
+    isLoading: isPricesLoading,
+    error: pricesError,
+  } = useCryptoPrices();
 
-      if (userError || !user) {
-        throw new Error("User is not authenticated");
+  const balance = useMemo(() => {
+    // If we don't have prices yet, don't calculate
+    // an incorrect $0 balance.
+    if (!prices) {
+      return undefined;
+    }
+
+    return assetBalances.reduce((total, asset) => {
+      const assetSymbol = asset.asset.toUpperCase();
+
+      const priceKey = assetPriceKey[assetSymbol as keyof typeof assetPriceKey];
+
+      if (!priceKey) {
+        return total;
       }
 
-      const { data, error } = await supabase
-        .from("account_balances")
-        .select("balance")
-        .eq("user_id", user.id)
-        .single();
+      const price = Number(prices[priceKey] ?? 0);
 
-      if (error) {
-        throw new Error("We couldn't load your account balance.");
-      }
+      return total + asset.available_balance * price;
+    }, 0);
+  }, [assetBalances, prices]);
 
-      return Number(data.balance);
-    },
-
-    // Automatically check for balance changes every 5 seconds.
-    refetchInterval: 5000,
-
-    // Also refresh when the user comes back to the browser tab.
-    refetchOnWindowFocus: true,
-
-    // Refresh when the browser reconnects to the internet.
-    refetchOnReconnect: true,
-  });
+  return {
+    data: balance,
+    isLoading: isAssetsLoading || isPricesLoading,
+    error: assetsError || pricesError,
+  };
 }

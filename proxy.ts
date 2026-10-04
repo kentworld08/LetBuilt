@@ -13,12 +13,14 @@ export async function proxy(request: NextRequest) {
   const isPublicRoute =
     pathname === "/" ||
     pathname.startsWith("/about") ||
-    pathname.startsWith("/contact") ||
     pathname.startsWith("/affiliate") ||
     pathname.startsWith("/cfd") ||
     pathname.startsWith("/faqs") ||
     pathname.startsWith("/forex-trading") ||
     pathname.startsWith("/terms");
+
+  const isContactRoute =
+    pathname === "/contact" || pathname.startsWith("/contact/");
 
   // Logged-out users cannot access the authenticated app.
   if (
@@ -44,7 +46,10 @@ export async function proxy(request: NextRequest) {
   }
 
   // Logged-in users cannot return to the public website.
-  if (user && isPublicRoute) {
+  //
+  // Contact is intentionally excluded here so authenticated
+  // users can use Contact Support from the dashboard.
+  if (user && isPublicRoute && !isContactRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
 

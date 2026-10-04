@@ -46,6 +46,10 @@ export async function PATCH(
       );
     }
 
+    /* =========================================================
+       APPROVE
+    ========================================================= */
+
     if (action === "approve") {
       if (withdrawal.status !== "pending") {
         return NextResponse.json(
@@ -79,26 +83,49 @@ export async function PATCH(
       });
     }
 
+    /* =========================================================
+       REJECT
+    ========================================================= */
+
     if (action === "reject") {
-      if (
-        withdrawal.status !== "pending" &&
-        withdrawal.status !== "processing"
-      ) {
+      if (withdrawal.status !== "pending") {
         return NextResponse.json(
-          { error: "This withdrawal cannot be rejected" },
+          { error: "Only pending withdrawals can be rejected" },
           { status: 400 },
         );
       }
 
-      const { error } = await supabase.rpc("reject_withdrawal", {
+      const adminNotes =
+        typeof body.admin_notes === "string" ? body.admin_notes.trim() : "";
+
+      if (!adminNotes) {
+        return NextResponse.json(
+          {
+            error: "A rejection reason is required",
+          },
+          { status: 400 },
+        );
+      }
+
+      /*
+       * The rejection RPC:
+       * - locks the withdrawal
+       * - releases the reserved balance
+       * - marks the withdrawal as rejected
+       * - saves the admin rejection reason
+       */
+      const { error: rpcError } = await supabase.rpc("reject_withdrawal", {
         p_withdrawal_id: id,
+        p_admin_notes: adminNotes,
       });
 
-      if (error) {
-        console.error("Reject withdrawal error:", error);
+      if (rpcError) {
+        console.error("Reject withdrawal error:", rpcError);
 
         return NextResponse.json(
-          { error: "Failed to reject withdrawal" },
+          {
+            error: rpcError.message || "Failed to reject withdrawal",
+          },
           { status: 500 },
         );
       }
@@ -108,6 +135,10 @@ export async function PATCH(
         message: "Withdrawal rejected",
       });
     }
+
+    /* =========================================================
+       COMPLETE
+    ========================================================= */
 
     if (action === "complete") {
       if (withdrawal.status !== "processing") {

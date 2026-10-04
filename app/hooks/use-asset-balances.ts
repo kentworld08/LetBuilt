@@ -48,5 +48,10 @@ export function useAssetBalances() {
         };
       });
     },
+
+    // Keep the user's crypto holdings synchronized with the database.
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
