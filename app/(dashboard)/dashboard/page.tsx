@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 
 import { createClient } from "@/utils/supabase/client";
+import Image from "next/image";
 
 /* =========================================================
    TYPES
@@ -368,9 +369,13 @@ const Dashboard = () => {
         <aside className="hidden h-full w-64 shrink-0 border-r border-gray-200 bg-white lg:flex lg:flex-col">
           <div className="flex h-20 items-center border-b border-gray-200 px-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-white">
-                <CircleDollarSign size={21} />
-              </div>
+              <Image
+                src="/letbuilt.png"
+                alt="LetBuilt Logo"
+                width={21}
+                height={21}
+                className="h-9 w-9 rounded-lg"
+              />
 
               <span className="text-xl font-bold text-gray-900">LetBuilt</span>
             </div>

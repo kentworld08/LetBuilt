@@ -8,8 +8,9 @@ import ConditionalLayout from "@/components/ConditionalLayout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LetBuilt - Cryptocurrency Trading Platform",
-  description: "Your trusted Bitcoin mining and investment company",
+  title: "LetBuilt | Crypto Trading & Investment Platform",
+  description:
+    "LetBuilt is a cryptocurrency platform for managing digital assets, deposits, withdrawals, and crypto investments.",
 };
 
 export default function RootLayout({
