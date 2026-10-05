@@ -26,7 +26,8 @@ const cryptoOptions: CryptoOption[] = [
   {
     asset: "BTC",
     network: "Bitcoin",
-    address: "bc1pr652fa7ehmkv8ztmr2ve6rgdhyfjnnua4keasa5qs0l5cvl7hkfqjfg98r",
+    address:
+      "bc1pr652fa7ehmkv8ztmr2ve6rgdhyfjnnua4keasa5qs0l5cvl7hkfqjfg98r",
     label: "BTC — Bitcoin",
   },
   {
@@ -131,13 +132,47 @@ export default function DepositPage() {
       return;
     }
 
+    /*
+     * The database function selects the active receiving address
+     * and stores its ID in deposit_address_id.
+     *
+     * Use that exact address for this deposit instead of relying
+     * on the frontend's hardcoded address.
+     */
+    if (!data.deposit_address_id) {
+      setError("We could not determine the deposit address.");
+      return;
+    }
+
+    const {
+      data: addressData,
+      error: addressError,
+    } = await supabase
+      .from("deposit_addresses")
+      .select("address")
+      .eq("id", data.deposit_address_id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (addressError) {
+      setError(
+        `We could not retrieve the deposit address: ${addressError.message}`,
+      );
+      return;
+    }
+
+    if (!addressData?.address) {
+      setError("The deposit address could not be found.");
+      return;
+    }
+
     setSuccess({
       id: data.id,
       reference: data.reference,
       amount: Number(data.amount),
       asset: data.asset,
       network: data.network,
-      address: selectedOption.address,
+      address: addressData.address,
     });
 
     setAmount("");
@@ -425,7 +460,10 @@ export default function DepositPage() {
                           >
                             {hashLoading ? (
                               <>
-                                <Loader2 size={18} className="animate-spin" />
+                                <Loader2
+                                  size={18}
+                                  className="animate-spin"
+                                />
                                 Verifying transaction...
                               </>
                             ) : (
@@ -508,7 +546,9 @@ export default function DepositPage() {
             <div>
               <p className="text-sm font-medium text-gray-500">Wallet</p>
 
-              <h1 className="text-base font-semibold text-gray-900">Deposit</h1>
+              <h1 className="text-base font-semibold text-gray-900">
+                Deposit
+              </h1>
             </div>
           </div>
 
@@ -704,7 +744,10 @@ export default function DepositPage() {
                     >
                       {copied ? (
                         <>
-                          <CheckCircle2 size={16} className="text-green-600" />
+                          <CheckCircle2
+                            size={16}
+                            className="text-green-600"
+                          />
                           Address copied
                         </>
                       ) : (
@@ -727,8 +770,8 @@ export default function DepositPage() {
                       <span className="font-semibold">
                         {selectedOption.network}
                       </span>{" "}
-                      network only. Using another network or asset may result in
-                      permanent loss of funds.
+                      network only. Using another network or asset may result
+                      in permanent loss of funds.
                     </p>
                   </div>
 
@@ -783,9 +826,9 @@ export default function DepositPage() {
                 />
 
                 <p className="text-xs leading-5 text-gray-600">
-                  Your balance is not changed when a deposit request is created.
-                  Funds are credited only after the blockchain transaction has
-                  been verified successfully.
+                  Your balance is not changed when a deposit request is
+                  created. Funds are credited only after the blockchain
+                  transaction has been verified successfully.
                 </p>
               </div>
 
